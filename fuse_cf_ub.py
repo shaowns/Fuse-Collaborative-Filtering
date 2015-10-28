@@ -6,6 +6,7 @@ import math
 # Import stuff from other files.
 import formula_list as fl
 import fuse_cf_utility as fcu
+import input_spreadsheet_vector as isv
 
 formulas = fl.get_formula_list()
 
@@ -30,21 +31,10 @@ def initialize_formula_imp_weights():
         formula_imp_weight[formula] = 0.0
 
 
-def load_testing_instance():
-    global testing_instance
-    testing_instance = vector_set.pop()
-
-
-def add_testing_instance():
-    # Dummy for now.
-    from random import randint
-    test = [randint(0, 1) for _ in xrange(len(formulas))]
-    vector_set.append(test)
-
-
-def load_csv():
+def load_vector_set():
     with open(csv_file_fuse, 'r') as f:
         csv_reader = csv.reader(f)
+        csv_reader.next()
         for row in csv_reader:
             row_data = []
             for element in row:
@@ -52,7 +42,8 @@ def load_csv():
             vector_set.append(row_data)
 
     # Add the testing instance at the very end.
-    add_testing_instance()
+    test = isv.get_testing_vector('Test.xlsx')
+    vector_set.append(test)
 
 
 def calculate_formula_weight():
@@ -83,16 +74,16 @@ def calculate_formula_vectors():
         vector_set[i] = instance
 
 
-def do_knn(n):
-    load_testing_instance()
+def get_knn(n):
+    global testing_instance
+    testing_instance = vector_set.pop()
 
     similarity_results = []
     for instance in vector_set:
-        global testing_instance
         similarity_results.append([instance, fcu.cosine_similarity(testing_instance, instance)])
 
     # Sort the similarity values, stored in position 1 of results.
-    similarity_results = sorted(similarity_results, key=lambda k: k[1])
+    similarity_results = sorted(similarity_results, key=lambda k: k[1], reverse=True)
 
     return similarity_results[:n]
 
@@ -106,6 +97,7 @@ def get_recommendations(recommendation_instances, n):
         # Sanity check
         assert (len(formulas) == len(instance)), "The similar instance doesn't have correct dimension"
         assert (len(testing_instance) == len(instance)), "The similar instance doesn't have correct dimension"
+
         for index in xrange(0, len(formulas)):
             if testing_instance[index] == 0.0 and instance[index] > 0.0:
                 recommendations.append(formulas[index])
@@ -114,13 +106,13 @@ def get_recommendations(recommendation_instances, n):
 
 
 def main():
-    load_csv()
+    load_vector_set()
 
     calculate_formula_weight()
 
     calculate_formula_vectors()
 
-    results = do_knn(3)
+    results = get_knn(3)
 
     recommendations = get_recommendations(results, 3)
 

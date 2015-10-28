@@ -14,6 +14,9 @@ def process_json_metadata():
     output_file = open(csv_output_file,'w+')
     csv_writer = csv.writer(output_file, dialect='excel')
 
+    # Write headers.
+    csv_writer.writerow(formulas)
+
     with open(fuse_json_file_name, 'r') as fd:
         # IMPORTANT: One json record per line, not an array of json objects.
         for line in fd:
